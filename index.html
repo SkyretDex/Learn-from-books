@@ -1530,7 +1530,7 @@
                 this.renderPage(this.pageNum);
             },
 
-            async renderPage(num) {
+            async renderPage(num, scrollToEnd = false) {
                 const page = await this.pdf.getPage(num);
                 const textContent = await page.getTextContent();
 
