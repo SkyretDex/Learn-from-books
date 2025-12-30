@@ -1254,6 +1254,9 @@
                 document.documentElement.style.setProperty('--reader-font', this.fontFamily);
                 document.documentElement.style.setProperty('--reader-bg', theme.bg);
                 document.documentElement.style.setProperty('--reader-text', theme.text);
+
+                // If fullscreen, update indicator because reflow might happen
+                this.syncFullscreenUI();
             },
 
             syncFullscreenUI() {
@@ -1264,6 +1267,12 @@
                 // Sync font family selector
                 const fsFontSelect = document.getElementById('font-family-fs');
                 if (fsFontSelect) fsFontSelect.value = this.fontFamily;
+
+                // Update indicator as content might reflow
+                if (typeof fullscreen !== 'undefined' && fullscreen.isActive) {
+                    // Small timeout to allow CSS application
+                    setTimeout(() => fullscreen.updateIndicator(), 50);
+                }
             }
         };
 
@@ -1289,6 +1298,14 @@
                     document.getElementById('bottom-settings').style.display = 'none';
                     document.getElementById('settings-toggle').classList.remove('active');
                 }
+            },
+
+            enter() {
+                if (!this.isActive) this.toggle();
+            },
+
+            exit() {
+                if (this.isActive) this.toggle();
             },
 
             toggleSettings() {
@@ -1343,15 +1360,34 @@
             updateIndicator() {
                 const container = document.getElementById('page-content');
                 if (!container) return;
+
+                // Calculate virtual screens
                 const scrollW = container.clientWidth + 80;
-                const currentScreen = Math.round(container.scrollLeft / scrollW) + 1;
+                // Total scroll width might slightly vary due to browser rendering, use Math.ceil
+                const totalScreens = Math.max(1, Math.ceil(container.scrollWidth / scrollW));
+                const currentScreen = Math.min(totalScreens, Math.round(container.scrollLeft / scrollW) + 1);
 
                 const indicator = document.getElementById('fs-page-indicator');
                 if (indicator) {
-                    indicator.textContent = `Стр. ${reader.pageNum}.${currentScreen}`;
+                    indicator.textContent = `Стр. ${reader.pageNum} (${currentScreen}/${totalScreens})`;
                 }
+
+                // Update navigation buttons visibility if needed
+                const prev = document.querySelector('.fs-nav-prev');
+                const next = document.querySelector('.fs-nav-next');
+
+                if (prev) prev.style.display = (reader.pageNum === 1 && currentScreen === 1) ? 'none' : 'flex';
+                // Always show next if likely to have next page or screen
+                if (next) next.style.display = 'flex';
             }
         };
+
+        // Listen for resize to update indicator
+        window.addEventListener('resize', () => {
+            if (typeof fullscreen !== 'undefined' && fullscreen.isActive) {
+                fullscreen.updateIndicator();
+            }
+        });
 
         // Keyboard navigation for fullscreen
         document.addEventListener('keydown', (e) => {
@@ -1386,6 +1422,11 @@
                 if (target) {
                     target.style.display = (view === 'reader') ? 'flex' : 'block';
                     setTimeout(() => target.classList.add('active'), 10);
+                }
+
+                // Exit fullscreen if leaving reader
+                if (view !== 'reader' && typeof fullscreen !== 'undefined') {
+                    fullscreen.exit();
                 }
 
                 const menuIndex = { 'library': 0, 'dictionary': 1, 'game': 2 }[view];
@@ -1479,6 +1520,7 @@
                 this.totalPages = this.pdf.numPages;
 
                 app.nav('reader');
+                if (typeof fullscreen !== 'undefined') fullscreen.enter();
                 this.renderPage(this.pageNum);
             },
 
