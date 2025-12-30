@@ -1382,6 +1382,36 @@
             }
         };
 
+        // Swipe Gesture Support
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', e => {
+            if (fullscreen.isActive) {
+                touchStartX = e.changedTouches[0].screenX;
+            }
+        }, false);
+
+        document.addEventListener('touchend', e => {
+            if (fullscreen.isActive) {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipe();
+            }
+        }, false);
+
+        function handleSwipe() {
+            const threshold = 50; // min swipe distance
+            if (touchEndX < touchStartX - threshold) {
+                // Swipe Left -> Next Page
+                fullscreen.nextScreen();
+            }
+
+            if (touchEndX > touchStartX + threshold) {
+                // Swipe Right -> Prev Page
+                fullscreen.prevScreen();
+            }
+        }
+
         // Listen for resize to update indicator
         window.addEventListener('resize', () => {
             if (typeof fullscreen !== 'undefined' && fullscreen.isActive) {
