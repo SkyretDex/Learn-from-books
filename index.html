@@ -690,6 +690,157 @@
             border-color: var(--accent);
             color: #fff;
         }
+
+        /* FULLSCREEN MODE */
+        .fullscreen-mode .sidebar {
+            display: none !important;
+        }
+
+        .fullscreen-mode .reader-header {
+            display: none !important;
+        }
+
+        .fullscreen-mode .page-content {
+            max-width: 800px;
+            margin: 0 auto;
+            height: 100vh;
+            padding: 40px 60px 100px;
+            overflow-y: auto;
+        }
+
+        .fullscreen-btn {
+            background: #333;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .fullscreen-btn:hover {
+            background: var(--accent);
+        }
+
+        /* Bottom Settings Panel */
+        .bottom-settings {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid #333;
+            padding: 15px 20px;
+            display: none;
+            z-index: 1000;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .fullscreen-mode .bottom-settings {
+            display: block;
+        }
+
+        .bottom-settings-content {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .bottom-settings-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .bottom-settings-label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .settings-toggle-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #333, #222);
+            color: white;
+            border: 1px solid #444;
+            padding: 12px 24px;
+            border-radius: 50px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            z-index: 999;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            transition: all 0.2s;
+        }
+
+        .settings-toggle-btn:hover {
+            background: linear-gradient(135deg, #444, #333);
+            border-color: var(--accent);
+        }
+
+        .fullscreen-mode .settings-toggle-btn {
+            display: flex;
+        }
+
+        .fullscreen-mode .settings-toggle-btn.active {
+            bottom: 85px;
+        }
+
+        .exit-fullscreen-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: #888;
+            border: 1px solid #444;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .exit-fullscreen-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+
+        .fullscreen-pagination {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .fullscreen-pagination .page-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
     </style>
 </head>
 
@@ -755,10 +906,66 @@
                     <span class="page-info" id="page-info">1 / ?</span>
                     <button class="page-btn" id="btn-next" onclick="reader.changePage(1)"><i
                             class="fas fa-chevron-right"></i></button>
+                    <button class="fullscreen-btn" onclick="fullscreen.toggle()" title="Полноэкранный режим">
+                        <i class="fas fa-expand"></i>
+                    </button>
                 </div>
             </div>
 
             <div id="page-content" class="page-content"></div>
+
+            <!-- Fullscreen Settings Toggle Button -->
+            <button class="settings-toggle-btn" id="settings-toggle" onclick="fullscreen.toggleSettings()">
+                <i class="fas fa-cog"></i> Настройки
+            </button>
+
+            <!-- Bottom Settings Panel for Fullscreen Mode -->
+            <div class="bottom-settings" id="bottom-settings">
+                <div class="bottom-settings-content">
+                    <div class="bottom-settings-group">
+                        <span class="bottom-settings-label">Шрифт</span>
+                        <select id="font-family-fs" class="font-select" onchange="settings.setFont(this.value)">
+                            <option value="'Roboto', sans-serif">Roboto</option>
+                            <option value="'Merriweather', serif">Merriweather</option>
+                            <option value="'Lora', serif">Lora</option>
+                            <option value="'Open Sans', sans-serif">Open Sans</option>
+                            <option value="'Playfair Display', serif">Playfair</option>
+                        </select>
+                    </div>
+
+                    <div class="bottom-settings-group">
+                        <span class="bottom-settings-label">Размер</span>
+                        <button class="size-btn" onclick="settings.changeSize(-2)">-</button>
+                        <span id="font-size-val-fs"
+                            style="font-size:14px; color:#fff; width:30px; text-align:center">22</span>
+                        <button class="size-btn" onclick="settings.changeSize(2)">+</button>
+                    </div>
+
+                    <div class="bottom-settings-group">
+                        <span class="bottom-settings-label">Тема</span>
+                        <div class="theme-selector">
+                            <button class="theme-btn dark" onclick="settings.setTheme('dark')" title="Тёмная"></button>
+                            <button class="theme-btn light" onclick="settings.setTheme('light')"
+                                title="Светлая"></button>
+                            <button class="theme-btn sepia" onclick="settings.setTheme('sepia')" title="Сепия"></button>
+                            <button class="theme-btn night" onclick="settings.setTheme('night')"
+                                title="Ночная"></button>
+                        </div>
+                    </div>
+
+                    <div class="bottom-settings-group fullscreen-pagination">
+                        <button class="page-btn" onclick="reader.changePage(-1)"><i
+                                class="fas fa-chevron-left"></i></button>
+                        <span class="page-info" id="page-info-fs">1 / ?</span>
+                        <button class="page-btn" onclick="reader.changePage(1)"><i
+                                class="fas fa-chevron-right"></i></button>
+                    </div>
+
+                    <button class="exit-fullscreen-btn" onclick="fullscreen.toggle()">
+                        <i class="fas fa-compress"></i> Выйти
+                    </button>
+                </div>
+            </div>
         </div>
 
         <div id="view-dictionary" class="view-section">
@@ -897,6 +1104,8 @@
                 if (this.fontSize > 40) this.fontSize = 40;
 
                 document.getElementById('font-size-val').textContent = this.fontSize;
+                const fsSizeVal = document.getElementById('font-size-val-fs');
+                if (fsSizeVal) fsSizeVal.textContent = this.fontSize;
                 this.save();
                 this.apply();
             },
@@ -937,6 +1146,62 @@
                 document.documentElement.style.setProperty('--reader-font', this.fontFamily);
                 document.documentElement.style.setProperty('--reader-bg', theme.bg);
                 document.documentElement.style.setProperty('--reader-text', theme.text);
+            },
+
+            syncFullscreenUI() {
+                // Sync font size display
+                const fsSizeVal = document.getElementById('font-size-val-fs');
+                if (fsSizeVal) fsSizeVal.textContent = this.fontSize;
+
+                // Sync font family selector
+                const fsFontSelect = document.getElementById('font-family-fs');
+                if (fsFontSelect) fsFontSelect.value = this.fontFamily;
+            }
+        };
+
+        /* =========================================
+           FULLSCREEN MODE LOGIC
+           ========================================= */
+        const fullscreen = {
+            isActive: false,
+            settingsOpen: false,
+
+            toggle() {
+                this.isActive = !this.isActive;
+                document.body.classList.toggle('fullscreen-mode', this.isActive);
+
+                if (this.isActive) {
+                    // Sync UI when entering fullscreen
+                    settings.syncFullscreenUI();
+                    settings.updateThemeButtons();
+                    this.updatePageInfo();
+                } else {
+                    // Close settings panel when exiting
+                    this.settingsOpen = false;
+                    document.getElementById('bottom-settings').style.display = 'none';
+                    document.getElementById('settings-toggle').classList.remove('active');
+                }
+            },
+
+            toggleSettings() {
+                this.settingsOpen = !this.settingsOpen;
+                const panel = document.getElementById('bottom-settings');
+                const btn = document.getElementById('settings-toggle');
+
+                if (this.settingsOpen) {
+                    panel.style.display = 'block';
+                    btn.classList.add('active');
+                } else {
+                    panel.style.display = 'none';
+                    btn.classList.remove('active');
+                }
+            },
+
+            updatePageInfo() {
+                const pageInfoFs = document.getElementById('page-info-fs');
+                if (pageInfoFs && reader.pdf) {
+                    pageInfoFs.textContent = `${reader.pageNum} / ${reader.totalPages}`;
+                }
             }
         };
 
@@ -1106,6 +1371,9 @@
                 document.getElementById('page-info').textContent = `${num} / ${this.totalPages}`;
                 document.getElementById('btn-prev').disabled = num <= 1;
                 document.getElementById('btn-next').disabled = num >= this.totalPages;
+
+                // Update fullscreen page info
+                fullscreen.updatePageInfo();
 
                 DB.updateProgress(this.currentBookId, num);
             },
