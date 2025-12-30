@@ -700,17 +700,7 @@
             display: none !important;
         }
 
-        .fullscreen-mode .page-content {
-            max-width: none;
-            width: 100%;
-            height: calc(100vh - 80px);
-            padding: 40px 60px;
-            margin: 0;
-            overflow: hidden;
-            column-width: 600px;
-            column-gap: 80px;
-            column-fill: auto;
-        }
+
 
         .fullscreen-mode .page-content p {
             break-inside: avoid;
@@ -832,18 +822,26 @@
         }
 
         .bottom-settings-content {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             display: flex;
-            justify-content: space-between;
+            flex-wrap: wrap;
+            /* Allow wrapping */
+            justify-content: center;
+            /* Center items */
             align-items: center;
-            gap: 20px;
+            gap: 15px 30px;
+            /* Vertical gap 15px, Horizontal 30px */
+            padding-right: 60px;
+            /* Space for exit button if needed */
         }
 
         .bottom-settings-group {
             display: flex;
             align-items: center;
             gap: 12px;
+            white-space: nowrap;
+            /* Prevent splitting group label/control */
         }
 
         .bottom-settings-label {
@@ -889,10 +887,26 @@
             background: var(--accent);
             color: white;
             transform: rotate(90deg);
+            bottom: 160px;
+            /* Move higher to clear wrapped menu */
         }
 
-        .fullscreen-mode.settings-visible .page-content {
-            height: calc(100vh - 160px);
+
+
+        /* Adjust page content to be safer from bottom cutoff */
+        .fullscreen-mode .page-content {
+            max-width: none;
+            width: 100%;
+            height: 100vh;
+            /* Use full height */
+            padding: 40px 60px 80px;
+            /* 80px bottom padding */
+            margin: 0;
+            overflow: hidden;
+            column-width: 600px;
+            column-gap: 80px;
+            column-fill: auto;
+            /* Ensure columns use full height minus padding */
         }
 
         .exit-fullscreen-btn {
