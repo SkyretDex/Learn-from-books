@@ -1333,26 +1333,32 @@
             // Column Navigation Logic
             nextScreen() {
                 const container = document.getElementById('page-content');
-                const scrollAmount = container.clientWidth + 80; // width + gap
+                const scrollW = container.clientWidth + 80; // width + gap
+                const totalScreens = Math.max(1, Math.ceil(container.scrollWidth / scrollW));
+                // Get precise current screen index (0-based)
+                const currentIdx = Math.round(container.scrollLeft / scrollW);
 
-                if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 10) {
-                    // Start of next book page if available
+                if (currentIdx >= totalScreens - 1) {
+                    // At last screen -> Next Page
                     reader.changePage(1);
                 } else {
-                    container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+                    // Scroll to next screen absolute position
+                    container.scrollTo({ left: (currentIdx + 1) * scrollW, behavior: 'smooth' });
                     this.updateIndicator();
                 }
             },
 
             prevScreen() {
                 const container = document.getElementById('page-content');
-                const scrollAmount = container.clientWidth + 80;
+                const scrollW = container.clientWidth + 80;
+                const currentIdx = Math.round(container.scrollLeft / scrollW);
 
-                if (container.scrollLeft <= 0) {
-                    // Go to prev book page
+                if (currentIdx <= 0) {
+                    // At first screen -> Prev Page
                     reader.changePage(-1);
                 } else {
-                    container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+                    // Scroll to prev screen absolute position
+                    container.scrollTo({ left: (currentIdx - 1) * scrollW, behavior: 'smooth' });
                     this.updateIndicator();
                 }
             },
@@ -1372,7 +1378,7 @@
                     indicator.textContent = `Стр. ${reader.pageNum} (${currentScreen}/${totalScreens})`;
                 }
 
-                // Update navigation buttons visibility if needed
+                // Update navigation arrow visibility
                 const prev = document.querySelector('.fs-nav-prev');
                 const next = document.querySelector('.fs-nav-next');
 
