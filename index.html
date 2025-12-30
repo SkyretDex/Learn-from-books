@@ -370,37 +370,255 @@
         }
 
         /* GAME */
+        .game-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .game-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 16px;
+            border: 1px solid #333;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: #333;
+            border-radius: 10px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--green));
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
         .game-card {
             max-width: 500px;
-            margin: 50px auto;
-            background: var(--panel);
-            padding: 40px;
-            border-radius: 20px;
+            margin: 0 auto;
+            background: linear-gradient(145deg, #1e1e2e, #252538);
+            padding: 50px 40px;
+            border-radius: 24px;
             text-align: center;
-            border: 2px solid #333;
+            border: 1px solid #333;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent), var(--gold), var(--green));
+        }
+
+        .game-word {
+            font-size: 42px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(74, 144, 226, 0.3);
+        }
+
+        .game-hint {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 30px;
         }
 
         .option-btn {
             display: block;
             width: 100%;
-            margin: 10px 0;
-            padding: 15px;
-            background: #333;
-            border: 1px solid #444;
+            margin: 12px 0;
+            padding: 18px 20px;
+            background: linear-gradient(145deg, #2a2a3e, #1f1f2e);
+            border: 2px solid #3a3a5a;
             color: white;
-            border-radius: 10px;
+            border-radius: 14px;
             cursor: pointer;
             font-size: 18px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            border-color: var(--accent);
+            background: linear-gradient(145deg, #2f2f45, #252538);
+            box-shadow: 0 8px 25px rgba(74, 144, 226, 0.2);
+        }
+
+        .option-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
         }
 
         .option-btn.correct {
-            background: var(--green);
+            background: linear-gradient(145deg, #1e5a3a, #145535);
             border-color: var(--green);
+            animation: pulse-correct 0.5s ease;
         }
 
         .option-btn.wrong {
-            background: var(--red);
+            background: linear-gradient(145deg, #5a1e1e, #4a1515);
             border-color: var(--red);
+            animation: shake 0.5s ease;
+        }
+
+        .option-btn.show-correct {
+            background: linear-gradient(145deg, #1e5a3a, #145535);
+            border-color: var(--green);
+        }
+
+        @keyframes pulse-correct {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.03);
+            }
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        .game-result {
+            margin-top: 25px;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .game-result.success {
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--green);
+            border: 1px solid var(--green);
+        }
+
+        .game-result.error {
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--red);
+            border: 1px solid var(--red);
+        }
+
+        .next-btn {
+            margin-top: 20px;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, var(--accent), #357abd);
+            border: none;
+            color: white;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .next-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(74, 144, 226, 0.4);
+        }
+
+        .game-empty {
+            text-align: center;
+            padding: 60px 40px;
+            background: var(--panel);
+            border-radius: 20px;
+            border: 2px dashed #444;
+        }
+
+        .game-empty i {
+            font-size: 60px;
+            color: #444;
+            margin-bottom: 20px;
+        }
+
+        .game-empty h3 {
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        .game-empty p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .game-mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        .mode-btn {
+            padding: 12px 24px;
+            background: #252538;
+            border: 1px solid #3a3a5a;
+            color: #888;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .mode-btn:hover {
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .mode-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
         }
     </style>
 </head>
@@ -614,11 +832,18 @@
                 document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
 
                 const target = document.getElementById('view-' + view);
-                target.style.display = (view === 'reader') ? 'flex' : 'block';
-                setTimeout(() => target.classList.add('active'), 10);
+                if (target) {
+                    target.style.display = (view === 'reader') ? 'flex' : 'block';
+                    setTimeout(() => target.classList.add('active'), 10);
+                }
 
-                const menuIndex = { 'library': 1, 'dictionary': 2, 'game': 3 }[view];
-                if (menuIndex !== undefined) document.querySelectorAll('.menu-item')[menuIndex].classList.add('active');
+                const menuIndex = { 'library': 0, 'dictionary': 1, 'game': 2 }[view];
+                if (menuIndex !== undefined) {
+                    const menuItems = document.querySelectorAll('.menu-item');
+                    if (menuItems[menuIndex]) {
+                        menuItems[menuIndex].classList.add('active');
+                    }
+                }
 
                 if (view === 'game') game.start();
                 if (view === 'library') this.renderLibrary();
@@ -849,16 +1074,72 @@
            GAME LOGIC
            ========================================= */
         const game = {
+            score: 0,
+            total: 0,
+            streak: 0,
+            mode: 'word-to-trans', // 'word-to-trans' или 'trans-to-word'
+            currentTarget: null,
+            answered: false,
+
+            init() {
+                // Загружаем статистику из localStorage
+                const savedStats = localStorage.getItem('game-stats');
+                if (savedStats) {
+                    const stats = JSON.parse(savedStats);
+                    this.score = stats.score || 0;
+                    this.total = stats.total || 0;
+                }
+            },
+
+            saveStats() {
+                localStorage.setItem('game-stats', JSON.stringify({
+                    score: this.score,
+                    total: this.total
+                }));
+            },
+
             start() {
+                this.init();
                 const list = vocab.list;
                 const ui = document.getElementById('game-ui');
 
                 if (list.length < 4) {
-                    ui.innerHTML = '<h3>Мало слов!</h3><p>Сохраните минимум 4 слова в словаре.</p>';
+                    ui.innerHTML = `
+                        <div class="game-container">
+                            <div class="game-empty">
+                                <i class="fas fa-book-open"></i>
+                                <h3>Недостаточно слов для тренировки</h3>
+                                <p>Добавьте минимум 4 слова в словарь.<br>Сейчас у вас: ${list.length} ${this.getWordForm(list.length)}</p>
+                            </div>
+                        </div>
+                    `;
                     return;
                 }
 
+                this.renderGame();
+            },
+
+            getWordForm(n) {
+                if (n === 1) return 'слово';
+                if (n >= 2 && n <= 4) return 'слова';
+                return 'слов';
+            },
+
+            setMode(mode) {
+                this.mode = mode;
+                this.renderGame();
+            },
+
+            renderGame() {
+                const list = vocab.list;
+                const ui = document.getElementById('game-ui');
+                this.answered = false;
+
+                // Выбираем случайное слово
                 const target = list[Math.floor(Math.random() * list.length)];
+                this.currentTarget = target;
+
+                // Собираем варианты ответов
                 let options = [target];
                 while (options.length < 4) {
                     const rnd = list[Math.floor(Math.random() * list.length)];
@@ -866,28 +1147,129 @@
                 }
                 options.sort(() => 0.5 - Math.random());
 
+                const accuracy = this.total > 0 ? Math.round((this.score / this.total) * 100) : 0;
+
                 ui.innerHTML = `
-            <div class="game-card">
-                <h2>${target.orig}</h2>
-                <div id="opts"></div>
-            </div>
-        `;
+                    <div class="game-container">
+                        <div class="game-stats">
+                            <div class="stat-item">
+                                <div class="stat-value">${this.score}</div>
+                                <div class="stat-label">Правильно</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${this.total}</div>
+                                <div class="stat-label">Всего</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${accuracy}%</div>
+                                <div class="stat-label">Точность</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" style="color: var(--gold)">🔥 ${this.streak}</div>
+                                <div class="stat-label">Серия</div>
+                            </div>
+                        </div>
+
+                        <div class="game-mode-selector">
+                            <button class="mode-btn ${this.mode === 'word-to-trans' ? 'active' : ''}" onclick="game.setMode('word-to-trans')">
+                                <i class="fas fa-arrow-right"></i> Слово → Перевод
+                            </button>
+                            <button class="mode-btn ${this.mode === 'trans-to-word' ? 'active' : ''}" onclick="game.setMode('trans-to-word')">
+                                <i class="fas fa-arrow-left"></i> Перевод → Слово
+                            </button>
+                        </div>
+
+                        <div class="game-card">
+                            <div class="game-word">${this.mode === 'word-to-trans' ? target.orig : target.trans}</div>
+                            <div class="game-hint">${this.mode === 'word-to-trans' ? 'Выберите правильный перевод' : 'Выберите правильное слово'}</div>
+                            <div id="opts"></div>
+                            <div id="game-feedback"></div>
+                        </div>
+                    </div>
+                `;
 
                 const optsDiv = document.getElementById('opts');
                 options.forEach(opt => {
                     const btn = document.createElement('button');
                     btn.className = 'option-btn';
-                    btn.textContent = opt.trans;
-                    btn.onclick = () => {
-                        if (opt === target) {
-                            btn.classList.add('correct');
-                            setTimeout(() => this.start(), 1000);
-                        } else {
-                            btn.classList.add('wrong');
-                        }
-                    };
+                    btn.textContent = this.mode === 'word-to-trans' ? opt.trans : opt.orig;
+                    btn.onclick = () => this.checkAnswer(btn, opt, target, options);
                     optsDiv.appendChild(btn);
                 });
+            },
+
+            checkAnswer(btn, selected, target, allOptions) {
+                if (this.answered) return;
+                this.answered = true;
+                this.total++;
+
+                const feedbackDiv = document.getElementById('game-feedback');
+                const allBtns = document.querySelectorAll('.option-btn');
+
+                // Дизейблим все кнопки
+                allBtns.forEach(b => b.disabled = true);
+
+                if (selected === target) {
+                    // Правильный ответ
+                    this.score++;
+                    this.streak++;
+                    btn.classList.add('correct');
+                    feedbackDiv.innerHTML = `
+                        <div class="game-result success">
+                            <i class="fas fa-check-circle"></i> Правильно! 
+                            ${this.streak > 1 ? `<span style="color: var(--gold)">🔥 Серия: ${this.streak}</span>` : ''}
+                        </div>
+                        <button class="next-btn" onclick="game.renderGame()">
+                            <i class="fas fa-arrow-right"></i> Следующее слово
+                        </button>
+                    `;
+                } else {
+                    // Неправильный ответ
+                    this.streak = 0;
+                    btn.classList.add('wrong');
+
+                    // Показываем правильный ответ
+                    const correctText = this.mode === 'word-to-trans' ? target.trans : target.orig;
+                    allBtns.forEach(b => {
+                        if (b.textContent === correctText) {
+                            b.classList.add('show-correct');
+                        }
+                    });
+
+                    feedbackDiv.innerHTML = `
+                        <div class="game-result error">
+                            <i class="fas fa-times-circle"></i> Неправильно!<br>
+                            <small>Правильный ответ: <strong>${correctText}</strong></small>
+                        </div>
+                        <button class="next-btn" onclick="game.renderGame()">
+                            <i class="fas fa-arrow-right"></i> Следующее слово
+                        </button>
+                    `;
+                }
+
+                this.saveStats();
+                this.updateStatsDisplay();
+            },
+
+            updateStatsDisplay() {
+                const accuracy = this.total > 0 ? Math.round((this.score / this.total) * 100) : 0;
+                const statValues = document.querySelectorAll('.stat-value');
+                if (statValues.length >= 4) {
+                    statValues[0].textContent = this.score;
+                    statValues[1].textContent = this.total;
+                    statValues[2].textContent = accuracy + '%';
+                    statValues[3].innerHTML = `🔥 ${this.streak}`;
+                }
+            },
+
+            resetStats() {
+                if (confirm('Сбросить всю статистику?')) {
+                    this.score = 0;
+                    this.total = 0;
+                    this.streak = 0;
+                    this.saveStats();
+                    this.start();
+                }
             }
         };
 
