@@ -4,21 +4,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Reader: Final Version</title>
+    <title>Smart Reader: Final App</title>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,700;1,400&family=Merriweather:wght@300;400;700&family=Open+Sans:wght@400;600&family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500&display=swap"
+        rel="stylesheet">
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 
     <style>
         :root {
-            --bg-dark: #121212;
-            --bg-panel: #1e1e1e;
+            --bg: #121212;
+            --panel: #1e1e1e;
             --accent: #4a90e2;
-            --text-main: #e0e0e0;
-            --text-muted: #a0a0a0;
+            --text: #e0e0e0;
             --gold: #ffd700;
             --green: #2ecc71;
             --red: #e74c3c;
+
+            /* Переменные для читалки */
+            --reader-font: 'Roboto', sans-serif;
+            --reader-size: 22px;
+            --reader-line-height: 1.6;
         }
 
         * {
@@ -26,16 +36,16 @@
         }
 
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-main);
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
             margin: 0;
             height: 100vh;
             display: flex;
             overflow: hidden;
         }
 
-        /* --- SIDEBAR --- */
+        /* SIDEBAR */
         .sidebar {
             width: 250px;
             background: #000;
@@ -49,24 +59,28 @@
         .logo {
             font-size: 20px;
             font-weight: bold;
-            color: #fff;
             margin-bottom: 40px;
+            color: #fff;
             display: flex;
-            align-items: center;
             gap: 10px;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .logo:hover {
+            color: var(--accent);
         }
 
         .menu-item {
-            padding: 12px 15px;
-            color: var(--text-muted);
+            padding: 12px;
+            color: #aaa;
             cursor: pointer;
             border-radius: 8px;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 15px;
             margin-bottom: 5px;
+            display: flex;
+            gap: 10px;
+            transition: 0.2s;
         }
 
         .menu-item:hover {
@@ -75,24 +89,25 @@
         }
 
         .menu-item.active {
-            background: var(--bg-panel);
+            background: var(--panel);
             color: var(--accent);
             font-weight: bold;
         }
 
-        /* --- CONTENT --- */
-        .main-content {
+        /* MAIN CONTENT */
+        .main {
             flex-grow: 1;
             padding: 0;
-            overflow-y: auto;
             position: relative;
+            display: flex;
+            flex-direction: column;
         }
 
         .view-section {
             display: none;
             padding: 40px;
-            max-width: 1000px;
-            margin: 0 auto;
+            height: 100%;
+            overflow-y: auto;
         }
 
         .view-section.active {
@@ -103,43 +118,41 @@
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(10px);
             }
 
             to {
                 opacity: 1;
-                transform: translateY(0);
             }
         }
 
-        /* СЕТКА КНИГ */
-        .header-area {
+        /* LIBRARY GRID */
+        .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
         }
 
-        .book-grid {
+        .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
             gap: 20px;
         }
 
         .book-card {
-            background: var(--bg-panel);
-            border-radius: 12px;
+            background: var(--panel);
             padding: 20px;
+            border-radius: 12px;
             text-align: center;
             cursor: pointer;
-            transition: transform 0.2s;
             border: 1px solid #333;
             position: relative;
+            transition: 0.2s;
         }
 
         .book-card:hover {
             transform: translateY(-5px);
-            background: #2a2a2a;
+            border-color: var(--accent);
         }
 
         .book-icon {
@@ -156,48 +169,137 @@
             text-overflow: ellipsis;
         }
 
-        .upload-btn {
+        .btn-delete {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #555;
+            cursor: pointer;
+        }
+
+        .btn-delete:hover {
+            color: var(--red);
+        }
+
+        .btn-upload {
             background: var(--accent);
             color: white;
             padding: 10px 20px;
             border-radius: 30px;
-            border: none;
             cursor: pointer;
             font-weight: bold;
             display: flex;
-            align-items: center;
             gap: 8px;
+            align-items: center;
         }
 
         input[type="file"] {
             display: none;
         }
 
-        /* ЧИТАЛКА */
-        #reader-container {
-            max-width: 800px;
+        /* READER & SETTINGS */
+        #view-reader {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 0;
+        }
+
+        .reader-header {
+            padding: 10px 20px;
+            background: #1a1a1a;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .settings-bar {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            background: #252525;
+            padding: 5px 15px;
+            border-radius: 8px;
+        }
+
+        .font-select {
+            background: #333;
+            color: white;
+            border: none;
+            padding: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .size-btn {
+            background: #333;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .size-btn:hover {
+            background: #444;
+        }
+
+        .page-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 40px;
+            max-width: 900px;
             margin: 0 auto;
-            font-size: 20px;
-            line-height: 1.8;
-            padding-bottom: 150px;
+            width: 100%;
+            /* Динамические стили */
+            font-size: var(--reader-size);
+            font-family: var(--reader-font);
+            line-height: var(--reader-line-height);
+        }
+
+        .pagination-controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .page-btn {
+            background: #333;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            font-size: 14px;
+            color: #888;
         }
 
         .word {
-            cursor: text;
-            border-radius: 4px;
-            padding: 1px 0;
+            cursor: pointer;
+            border-radius: 3px;
         }
 
         .word:hover {
             background: #333;
             color: #fff;
-            cursor: pointer;
         }
 
         .word.active {
             background: var(--gold);
             color: #000;
-            box-shadow: 0 0 5px var(--gold);
         }
 
         ::selection {
@@ -205,591 +307,593 @@
             color: white;
         }
 
-        /* Кнопка "Перевести выделенное" */
-        #selection-tooltip {
-            position: fixed;
-            background: #222;
-            color: #fff;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            display: none;
-            z-index: 2000;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-            border: 1px solid #444;
-            transform: translateX(-50%);
-        }
-
-        #selection-tooltip:hover {
-            background: var(--accent);
-            border-color: var(--accent);
-        }
-
-        /* СЛОВАРЬ */
+        /* DICTIONARY & POPUP */
         .vocab-list {
             max-width: 600px;
+            margin-top: 20px;
         }
 
         .vocab-item {
-            background: var(--bg-panel);
+            background: var(--panel);
             padding: 15px;
             margin-bottom: 10px;
             border-radius: 8px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
             border-left: 4px solid var(--accent);
         }
 
-        .vocab-eng {
-            font-weight: bold;
-            font-size: 18px;
-        }
-
-        .vocab-rus {
-            color: var(--text-muted);
-        }
-
-        .delete-word {
-            cursor: pointer;
-            color: #555;
-        }
-
-        .delete-word:hover {
-            color: #d9534f;
-        }
-
-        /* ИГРА */
-        .game-container {
-            max-width: 600px;
-            margin: 0 auto;
-            text-align: center;
-        }
-
-        .game-card {
-            background: var(--bg-panel);
-            padding: 50px 20px;
-            border-radius: 20px;
-            border: 2px solid #333;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .game-word {
-            font-size: 36px;
-            font-weight: bold;
-            color: #fff;
-            margin-bottom: 10px;
-        }
-
-        .game-hint {
-            color: #666;
-            font-size: 14px;
-        }
-
-        .options-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .option-btn {
-            background: #2a2a2a;
-            border: 1px solid #444;
-            color: #ddd;
-            padding: 20px;
-            border-radius: 12px;
-            font-size: 18px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .option-btn:hover {
-            background: #333;
-            border-color: #666;
-            transform: translateY(-2px);
-        }
-
-        .option-btn.correct {
-            background: var(--green) !important;
-            color: white !important;
-            border-color: var(--green);
-        }
-
-        .option-btn.wrong {
-            background: var(--red) !important;
-            color: white !important;
-            border-color: var(--red);
-            opacity: 0.6;
-        }
-
-        .game-score {
-            font-size: 24px;
-            margin-bottom: 20px;
-            color: var(--gold);
-        }
-
-        .start-btn {
-            background: var(--green);
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 20px;
-            border-radius: 50px;
-            cursor: pointer;
-            font-weight: bold;
-            box-shadow: 0 5px 20px rgba(46, 204, 113, 0.4);
-        }
-
-        .start-btn:hover {
-            transform: scale(1.05);
-        }
-
-        /* ПОПАП ПЕРЕВОДА */
-        #translation-popup {
+        #trans-popup {
             position: fixed;
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%) translateY(150%);
-            background: #252525;
-            padding: 20px 30px;
+            background: #222;
+            padding: 20px;
             border-radius: 50px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
             display: flex;
-            align-items: center;
             gap: 20px;
-            z-index: 1000;
+            align-items: center;
             border: 1px solid #444;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: 0.3s;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             min-width: 300px;
-            max-width: 90%;
         }
 
-        #translation-popup.visible {
+        #trans-popup.visible {
             transform: translateX(-50%) translateY(0);
         }
 
-        .popup-content {
-            flex-grow: 1;
-        }
-
-        .popup-word {
-            font-size: 14px;
-            color: #888;
-            text-transform: uppercase;
-            display: block;
-            max-width: 500px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .popup-trans {
-            font-size: 18px;
-            font-weight: bold;
-            color: #fff;
-        }
-
         .save-btn {
+            font-size: 22px;
+            color: #555;
+            cursor: pointer;
             background: none;
             border: none;
-            color: #555;
-            font-size: 22px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .save-btn:hover {
-            color: var(--gold);
         }
 
         .save-btn.saved {
             color: var(--gold);
         }
 
-        #loader {
+        #tooltip {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 2000;
+            background: #222;
+            padding: 8px 12px;
+            border-radius: 5px;
             display: none;
-            justify-content: center;
-            align-items: center;
+            cursor: pointer;
+            border: 1px solid #444;
+            z-index: 2000;
+            font-weight: bold;
+        }
+
+        /* GAME */
+        .game-card {
+            max-width: 500px;
+            margin: 50px auto;
+            background: var(--panel);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            border: 2px solid #333;
+        }
+
+        .option-btn {
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 15px;
+            background: #333;
+            border: 1px solid #444;
             color: white;
-            flex-direction: column;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .option-btn.correct {
+            background: var(--green);
+            border-color: var(--green);
+        }
+
+        .option-btn.wrong {
+            background: var(--red);
+            border-color: var(--red);
         }
     </style>
 </head>
 
 <body>
 
-    <div id="loader"><i class="fas fa-spinner fa-spin fa-3x"></i>
-        <p style="margin-top: 15px;">Обработка книги...</p>
-    </div>
-
-    <div id="selection-tooltip" onclick="translateSelection()">
-        <i class="fas fa-language"></i> Перевести
-    </div>
-
     <div class="sidebar">
-        <div class="logo"><i class="fas fa-book-open"></i> Smart Reader</div>
-        <div class="menu-item active" onclick="switchTab('library')"><i class="fas fa-layer-group"></i> Библиотека</div>
-        <div class="menu-item" onclick="switchTab('dictionary')"><i class="fas fa-star"></i> Словарь</div>
-        <div class="menu-item" onclick="switchTab('game')"><i class="fas fa-gamepad"></i> Тренировка</div>
+        <div class="logo" onclick="app.nav('library')">
+            <i class="fas fa-book-reader"></i> SmartReader
+        </div>
+        <div class="menu-item active" onclick="app.nav('library')"><i class="fas fa-th-large"></i> Библиотека</div>
+        <div class="menu-item" onclick="app.nav('dictionary')"><i class="fas fa-star"></i> Словарь</div>
+        <div class="menu-item" onclick="app.nav('game')"><i class="fas fa-gamepad"></i> Тренировка</div>
     </div>
 
-    <div class="main-content">
+    <div class="main">
 
-        <div id="tab-library" class="view-section active">
-            <div class="header-area">
-                <h2>Мои книги</h2>
-                <label class="upload-btn">
-                    <i class="fas fa-plus"></i> Открыть файл с ПК
-                    <input type="file" id="file-upload" accept="application/pdf">
+        <div id="view-library" class="view-section active">
+            <div class="header">
+                <h2>Моя библиотека</h2>
+                <label class="btn-upload">
+                    <i class="fas fa-plus"></i> Добавить книгу
+                    <input type="file" onchange="app.uploadBook(this)" accept="application/pdf">
                 </label>
             </div>
-            <div class="book-grid" id="book-list">
-            </div>
+            <div id="library-grid" class="grid"></div>
         </div>
 
-        <div id="tab-reader" class="view-section">
-            <div class="header-area">
-                <button onclick="switchTab('library')" class="upload-btn" style="background: #333;">
+        <div id="view-reader" class="view-section" style="padding: 0; display: none;">
+            <div class="reader-header">
+                <button onclick="app.nav('library')"
+                    style="background:none; border:none; color:#888; cursor:pointer; font-size:16px;">
                     <i class="fas fa-arrow-left"></i> Назад
                 </button>
-                <h3 id="current-book-title"
-                    style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%;">Чтение</h3>
+
+                <div class="settings-bar">
+                    <span style="font-size:12px; color:#888"><i class="fas fa-font"></i></span>
+                    <select id="font-family" class="font-select" onchange="settings.setFont(this.value)">
+                        <option value="'Roboto', sans-serif">Roboto</option>
+                        <option value="'Merriweather', serif">Merriweather</option>
+                        <option value="'Lora', serif">Lora</option>
+                        <option value="'Open Sans', sans-serif">Open Sans</option>
+                        <option value="'Playfair Display', serif">Playfair</option>
+                    </select>
+                    <div style="width:1px; height:20px; background:#444"></div>
+                    <button class="size-btn" onclick="settings.changeSize(-2)">-</button>
+                    <span id="font-size-val" style="font-size:14px; color:#fff; width:30px; text-align:center">22</span>
+                    <button class="size-btn" onclick="settings.changeSize(2)">+</button>
+                </div>
+
+                <div class="pagination-controls">
+                    <button class="page-btn" id="btn-prev" onclick="reader.changePage(-1)"><i
+                            class="fas fa-chevron-left"></i></button>
+                    <span class="page-info" id="page-info">1 / ?</span>
+                    <button class="page-btn" id="btn-next" onclick="reader.changePage(1)"><i
+                            class="fas fa-chevron-right"></i></button>
+                </div>
             </div>
-            <div id="reader-container"></div>
+
+            <div id="page-content" class="page-content"></div>
         </div>
 
-        <div id="tab-dictionary" class="view-section">
-            <h2>Мой словарь</h2>
+        <div id="view-dictionary" class="view-section">
+            <h2>Сохраненные слова</h2>
             <div id="vocab-list" class="vocab-list"></div>
         </div>
 
-        <div id="tab-game" class="view-section">
-            <div class="game-container" id="game-start-screen">
-                <i class="fas fa-brain" style="font-size: 60px; color: var(--accent); margin-bottom: 20px;"></i>
-                <h1>Проверь себя</h1>
-                <p style="color: #aaa; margin-bottom: 30px;">Выберите правильный перевод для слов из вашего словаря.</p>
-                <button class="start-btn" onclick="startGame()">Начать игру</button>
-            </div>
-
-            <div class="game-container" id="game-play-screen" style="display: none;">
-                <div class="header-area" style="justify-content: center; margin-bottom: 20px;">
-                    <span id="game-progress" style="color: #888;">1 / 10</span>
-                </div>
-
-                <div class="game-card">
-                    <div class="game-word" id="quiz-word">Word</div>
-                    <div class="game-hint">Выберите правильный перевод</div>
-                </div>
-
-                <div class="options-grid" id="quiz-options"></div>
-            </div>
-
-            <div class="game-container" id="game-end-screen" style="display: none;">
-                <i class="fas fa-trophy" style="font-size: 60px; color: var(--gold); margin-bottom: 20px;"></i>
-                <h1>Результат</h1>
-                <div class="game-score" id="final-score">8 / 10</div>
-                <button class="start-btn" onclick="startGame()">Играть снова</button>
-            </div>
+        <div id="view-game" class="view-section">
+            <div id="game-ui"></div>
         </div>
 
     </div>
 
-    <div id="translation-popup">
-        <div class="popup-content">
-            <span class="popup-word" id="p-original">WORD</span>
-            <span class="popup-trans" id="p-translated">...</span>
+    <div id="trans-popup">
+        <div style="flex-grow:1">
+            <div id="p-orig" style="font-size:12px; color:#888; text-transform:uppercase">WORD</div>
+            <div id="p-trans" style="font-size:18px; font-weight:bold; color:#fff">...</div>
         </div>
-        <button class="save-btn" id="btn-save-word" onclick="toggleSaveWord()">
-            <i class="fas fa-star"></i>
-        </button>
+        <button class="save-btn" id="btn-star" onclick="vocab.toggle()"><i class="fas fa-star"></i></button>
     </div>
+
+    <div id="tooltip" onclick="translator.translateSelection()">Перевести</div>
 
     <script>
-        // ==========================================
-        // ⚠️ СПИСОК КНИГ (Заполнен по твоему скриншоту)
-        // ==========================================
-        const MY_BOOKS = [
-            { title: "Франкенштейн", filename: "Frankenstein.pdf" },
-            { title: "Богатый папа, бедный папа", filename: "Rich_Dad_Poor_Dad.pdf" }
-        ];
-        // ==========================================
-
-        let myVocabulary = JSON.parse(localStorage.getItem('myVocabulary')) || [];
-        let currentWordData = null;
-        let lastSelectedText = "";
-        let gameQueue = [];
-        let currentQuestionIndex = 0;
-        let gameScore = 0;
-
-        // Инициализация
-        renderVocabulary();
-        renderCloudBooks();
-
-        function renderCloudBooks() {
-            const grid = document.getElementById('book-list');
-            grid.innerHTML = '';
-
-            if (MY_BOOKS.length === 0) {
-                const div = document.createElement('div');
-                div.className = 'book-card';
-                div.innerHTML = `<div class="book-title">Список пуст</div>`;
-                grid.appendChild(div);
-                return;
+        /* =========================================
+           DATABASE (IndexedDB)
+           ========================================= */
+        const DB = {
+            db: null,
+            init() {
+                return new Promise((resolve) => {
+                    const request = indexedDB.open("SmartReaderDB", 1);
+                    request.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains("books")) {
+                            db.createObjectStore("books", { keyPath: "id", autoIncrement: true });
+                        }
+                    };
+                    request.onsuccess = (e) => {
+                        this.db = e.target.result;
+                        resolve();
+                    };
+                });
+            },
+            addBook(title, blob) {
+                return new Promise((resolve) => {
+                    const tx = this.db.transaction("books", "readwrite");
+                    tx.objectStore("books").add({ title, blob, currentPage: 1, date: Date.now() });
+                    tx.oncomplete = () => resolve();
+                });
+            },
+            getBooks() {
+                return new Promise((resolve) => {
+                    const tx = this.db.transaction("books", "readonly");
+                    const req = tx.objectStore("books").getAll();
+                    req.onsuccess = () => resolve(req.result);
+                });
+            },
+            getBook(id) {
+                return new Promise((resolve) => {
+                    const tx = this.db.transaction("books", "readonly");
+                    const req = tx.objectStore("books").get(id);
+                    req.onsuccess = () => resolve(req.result);
+                });
+            },
+            deleteBook(id) {
+                return new Promise((resolve) => {
+                    const tx = this.db.transaction("books", "readwrite");
+                    tx.objectStore("books").delete(id);
+                    tx.oncomplete = () => resolve();
+                });
+            },
+            updateProgress(id, page) {
+                const tx = this.db.transaction("books", "readwrite");
+                const store = tx.objectStore("books");
+                store.get(id).onsuccess = (e) => {
+                    const data = e.target.result;
+                    if (data) {
+                        data.currentPage = page;
+                        store.put(data);
+                    }
+                };
             }
+        };
 
-            MY_BOOKS.forEach(book => {
-                const div = document.createElement('div');
-                div.className = 'book-card';
-                div.innerHTML = `
-                <div class="book-icon"><i class="fas fa-book" style="color:var(--accent)"></i></div>
-                <div class="book-title">${book.title}</div>
-            `;
-                // ПУТЬ К ФАЙЛУ: books/имя_файла
-                div.onclick = () => loadBookFromUrl('books/' + book.filename, book.title);
-                grid.appendChild(div);
-            });
-        }
+        /* =========================================
+           SETTINGS LOGIC (NEW!)
+           ========================================= */
+        const settings = {
+            fontSize: 22,
+            fontFamily: "'Roboto', sans-serif",
 
-        async function loadBookFromUrl(url, title) {
-            document.getElementById('loader').style.display = 'flex';
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error("Файл не найден");
-                const blob = await response.blob();
-                const arrayBuffer = await blob.arrayBuffer();
-                processPdfData(arrayBuffer, title);
-            } catch (error) {
-                alert("Ошибка! Не могу найти файл: " + url + "\nПроверьте, что имя файла в папке books совпадает с кодом (включая заглавные буквы).");
-                document.getElementById('loader').style.display = 'none';
+            init() {
+                // Загрузка настроек
+                const savedSize = localStorage.getItem('reader-size');
+                const savedFont = localStorage.getItem('reader-font');
+
+                if (savedSize) this.fontSize = parseInt(savedSize);
+                if (savedFont) this.fontFamily = savedFont;
+
+                this.apply();
+
+                // Обновляем UI
+                document.getElementById('font-size-val').textContent = this.fontSize;
+                document.getElementById('font-family').value = this.fontFamily;
+            },
+
+            changeSize(delta) {
+                this.fontSize += delta;
+                if (this.fontSize < 14) this.fontSize = 14;
+                if (this.fontSize > 40) this.fontSize = 40;
+
+                document.getElementById('font-size-val').textContent = this.fontSize;
+                this.save();
+                this.apply();
+            },
+
+            setFont(font) {
+                this.fontFamily = font;
+                this.save();
+                this.apply();
+            },
+
+            save() {
+                localStorage.setItem('reader-size', this.fontSize);
+                localStorage.setItem('reader-font', this.fontFamily);
+            },
+
+            apply() {
+                document.documentElement.style.setProperty('--reader-size', this.fontSize + 'px');
+                document.documentElement.style.setProperty('--reader-font', this.fontFamily);
             }
-        }
+        };
 
-        async function processPdfData(typedarray, title) {
-            try {
-                const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                let fullText = "";
-                const maxPages = Math.min(pdf.numPages, 50);
+        /* =========================================
+           APP LOGIC
+           ========================================= */
+        const app = {
+            async init() {
+                await DB.init();
+                settings.init(); // Инициализация настроек
+                this.renderLibrary();
+                vocab.render();
+            },
 
-                for (let i = 1; i <= maxPages; i++) {
-                    const page = await pdf.getPage(i);
-                    const textContent = await page.getTextContent();
-                    const pageStrings = textContent.items.map(item => item.str);
-                    fullText += pageStrings.join(' ') + "\n\n";
+            nav(view) {
+                document.querySelectorAll('.view-section').forEach(el => {
+                    el.style.display = 'none';
+                    el.classList.remove('active');
+                });
+                document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+
+                const target = document.getElementById('view-' + view);
+                target.style.display = (view === 'reader') ? 'flex' : 'block';
+                setTimeout(() => target.classList.add('active'), 10);
+
+                const menuIndex = { 'library': 1, 'dictionary': 2, 'game': 3 }[view];
+                if (menuIndex !== undefined) document.querySelectorAll('.menu-item')[menuIndex].classList.add('active');
+
+                if (view === 'game') game.start();
+                if (view === 'library') this.renderLibrary();
+            },
+
+            async uploadBook(input) {
+                const file = input.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const blob = new Blob([e.target.result], { type: 'application/pdf' });
+                    await DB.addBook(file.name.replace('.pdf', ''), blob);
+                    this.renderLibrary();
+                    alert("Книга добавлена!");
+                };
+                reader.readAsArrayBuffer(file);
+            },
+
+            async renderLibrary() {
+                const books = await DB.getBooks();
+                const grid = document.getElementById('library-grid');
+                grid.innerHTML = '';
+
+                if (books.length === 0) {
+                    grid.innerHTML = '<p style="color:#666">Библиотека пуста.</p>';
+                    return;
                 }
 
-                renderReader(fullText, title);
-                document.getElementById('loader').style.display = 'none';
-                switchTab('reader');
-            } catch (err) {
-                console.error(err);
-                alert("Ошибка чтения PDF. Возможно файл поврежден.");
-                document.getElementById('loader').style.display = 'none';
+                books.forEach(book => {
+                    const el = document.createElement('div');
+                    el.className = 'book-card';
+                    el.innerHTML = `
+                <div class="btn-delete" onclick="event.stopPropagation(); app.deleteBook(${book.id})"><i class="fas fa-trash"></i></div>
+                <div class="book-icon"><i class="fas fa-book"></i></div>
+                <div class="book-title">${book.title}</div>
+                <div style="font-size:12px; color:#666; margin-top:5px">Стр: ${book.currentPage}</div>
+            `;
+                    el.onclick = () => reader.open(book.id);
+                    grid.appendChild(el);
+                });
+            },
+
+            async deleteBook(id) {
+                if (confirm("Удалить книгу?")) {
+                    await DB.deleteBook(id);
+                    this.renderLibrary();
+                }
             }
-        }
+        };
 
-        // Загрузка локального файла (кнопка +)
-        document.getElementById('file-upload').addEventListener('change', async function (e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            document.getElementById('loader').style.display = 'flex';
-            const fileReader = new FileReader();
-            fileReader.onload = async function (ev) {
-                processPdfData(new Uint8Array(ev.target.result), file.name);
-            };
-            fileReader.readAsArrayBuffer(file);
-        });
+        /* =========================================
+           READER LOGIC
+           ========================================= */
+        const reader = {
+            pdf: null,
+            currentBookId: null,
+            pageNum: 1,
+            totalPages: 0,
 
-        // Отрисовка текста книги
-        function renderReader(text, title) {
-            document.getElementById('current-book-title').textContent = title;
-            const container = document.getElementById('reader-container');
-            container.innerHTML = '';
-            const paragraphs = text.split(/\n\s*\n/);
-            paragraphs.forEach(para => {
-                if (!para.trim()) return;
-                const p = document.createElement('p');
-                const words = para.split(/([a-zA-Z’'-]+)/);
+            async open(id) {
+                const book = await DB.getBook(id);
+                if (!book) return;
+
+                this.currentBookId = id;
+                this.pageNum = book.currentPage || 1;
+
+                const url = URL.createObjectURL(book.blob);
+                const loadingTask = pdfjsLib.getDocument(url);
+
+                this.pdf = await loadingTask.promise;
+                this.totalPages = this.pdf.numPages;
+
+                app.nav('reader');
+                this.renderPage(this.pageNum);
+            },
+
+            async renderPage(num) {
+                const page = await this.pdf.getPage(num);
+                const textContent = await page.getTextContent();
+
+                const div = document.getElementById('page-content');
+                div.innerHTML = '';
+                div.scrollTop = 0;
+
+                let fullText = textContent.items.map(item => item.str).join(' ');
+                const paras = fullText.split(/\n\s*\n/);
+
+                if (paras.length < 2) this.htmlifyWords(fullText, div);
+                else paras.forEach(pText => {
+                    const p = document.createElement('p');
+                    this.htmlifyWords(pText, p);
+                    div.appendChild(p);
+                });
+
+                document.getElementById('page-info').textContent = `${num} / ${this.totalPages}`;
+                document.getElementById('btn-prev').disabled = num <= 1;
+                document.getElementById('btn-next').disabled = num >= this.totalPages;
+
+                DB.updateProgress(this.currentBookId, num);
+            },
+
+            htmlifyWords(text, container) {
+                const words = text.split(/([a-zA-Z’'-]+)/);
                 words.forEach(frag => {
                     if (/[a-zA-Z]/.test(frag)) {
                         const span = document.createElement('span');
                         span.className = 'word';
                         span.textContent = frag;
-                        span.onclick = (e) => handleWordClick(e.target);
-                        p.appendChild(span);
-                    } else { p.appendChild(document.createTextNode(frag)); }
+                        span.onclick = (e) => translator.clickWord(e.target);
+                        container.appendChild(span);
+                    } else {
+                        container.appendChild(document.createTextNode(frag));
+                    }
                 });
-                container.appendChild(p);
-            });
-        }
+            },
 
-        // Логика выделения
-        document.addEventListener('mouseup', function (e) {
-            if (e.target.closest('#selection-tooltip')) return;
-            const tooltip = document.getElementById('selection-tooltip');
-            const selection = window.getSelection();
-            const text = selection.toString().trim();
-            if (!text || text.length < 2) { tooltip.style.display = 'none'; return; }
-            if (e.target.closest('#translation-popup')) return;
-            lastSelectedText = text;
-            const range = selection.getRangeAt(0);
-            const rect = range.getBoundingClientRect();
-            let top = rect.top - 40;
-            if (top < 10) top = rect.bottom + 10;
-            tooltip.style.left = (rect.left + (rect.width / 2)) + 'px';
-            tooltip.style.top = top + 'px';
-            tooltip.style.display = 'block';
-        });
-
-        function translateSelection() {
-            if (lastSelectedText) {
-                fetchTranslation(lastSelectedText);
-                document.getElementById('selection-tooltip').style.display = 'none';
-                window.getSelection().removeAllRanges();
+            changePage(offset) {
+                const newPage = this.pageNum + offset;
+                if (newPage >= 1 && newPage <= this.totalPages) {
+                    this.pageNum = newPage;
+                    this.renderPage(newPage);
+                }
             }
-        }
+        };
 
-        // Перевод (Google Translate API)
-        async function fetchTranslation(text) {
-            const popup = document.getElementById('translation-popup');
-            const pOriginal = document.getElementById('p-original');
-            const pTrans = document.getElementById('p-translated');
-            const btnSave = document.getElementById('btn-save-word');
-            popup.classList.add('visible');
-            pOriginal.textContent = text;
-            pTrans.textContent = "Перевод...";
-            const isSaved = myVocabulary.some(item => item.original === text.toLowerCase());
-            btnSave.className = isSaved ? 'save-btn saved' : 'save-btn';
-            try {
-                const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ru&dt=t&q=${encodeURIComponent(text)}`;
-                const res = await fetch(url);
-                const data = await res.json();
-                let translation = "";
-                if (data && data[0]) { data[0].forEach(part => { if (part[0]) translation += part[0]; }); }
-                pTrans.textContent = translation;
-                currentWordData = { original: text.toLowerCase(), translation: translation };
-            } catch (e) { pTrans.textContent = "Ошибка перевода"; }
-        }
+        /* =========================================
+           TRANSLATOR & VOCABULARY
+           ========================================= */
+        const vocab = {
+            list: JSON.parse(localStorage.getItem('vocab')) || [],
+            current: null,
 
-        function handleWordClick(el) {
-            document.querySelectorAll('.word.active').forEach(e => e.classList.remove('active'));
-            el.classList.add('active');
-            const cleanWord = el.textContent.replace(/[^a-zA-Z-]/g, "").trim();
-            fetchTranslation(cleanWord);
-        }
+            save() { localStorage.setItem('vocab', JSON.stringify(this.list)); this.render(); },
 
-        // Вспомогательные функции UI
-        function switchTab(tabName) {
-            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-            document.getElementById('tab-' + tabName).classList.add('active');
-            const menuItems = document.querySelectorAll('.menu-item');
-            if (tabName === 'library') menuItems[0].classList.add('active');
-            if (tabName === 'dictionary') { menuItems[1].classList.add('active'); renderVocabulary(); }
-            if (tabName === 'game') menuItems[2].classList.add('active');
-        }
+            toggle() {
+                if (!this.current) return;
+                const idx = this.list.findIndex(w => w.orig === this.current.orig);
+                if (idx >= 0) {
+                    this.list.splice(idx, 1);
+                    document.getElementById('btn-star').classList.remove('saved');
+                } else {
+                    this.list.push(this.current);
+                    document.getElementById('btn-star').classList.add('saved');
+                }
+                this.save();
+            },
 
-        function toggleSaveWord() {
-            if (!currentWordData) return;
-            const btn = document.getElementById('btn-save-word');
-            const existingIndex = myVocabulary.findIndex(w => w.original === currentWordData.original);
-            if (existingIndex >= 0) {
-                myVocabulary.splice(existingIndex, 1);
-                btn.classList.remove('saved');
-            } else {
-                myVocabulary.push(currentWordData);
-                btn.classList.add('saved');
+            checkSaved(word) {
+                const isSaved = this.list.some(w => w.orig === word);
+                const btn = document.getElementById('btn-star');
+                isSaved ? btn.classList.add('saved') : btn.classList.remove('saved');
+            },
+
+            render() {
+                const div = document.getElementById('vocab-list');
+                div.innerHTML = '';
+                [...this.list].reverse().forEach(w => {
+                    const el = document.createElement('div');
+                    el.className = 'vocab-item';
+                    el.innerHTML = `<div><b>${w.orig}</b><br><small>${w.trans}</small></div>`;
+                    div.appendChild(el);
+                });
             }
-            localStorage.setItem('myVocabulary', JSON.stringify(myVocabulary));
-            if (document.getElementById('tab-dictionary').classList.contains('active')) renderVocabulary();
-        }
+        };
 
-        function renderVocabulary() {
-            const list = document.getElementById('vocab-list');
-            list.innerHTML = '';
-            if (myVocabulary.length === 0) { list.innerHTML = '<p style="text-align:center; color:#555;">Словарь пуст</p>'; return; }
-            [...myVocabulary].reverse().forEach((item, index) => {
-                const originalIndex = myVocabulary.length - 1 - index;
-                const div = document.createElement('div');
-                div.className = 'vocab-item';
-                div.innerHTML = `<div><div class="vocab-eng">${item.original}</div><div class="vocab-rus">${item.translation}</div></div><i class="fas fa-trash delete-word" onclick="removeWord(${originalIndex})"></i>`;
-                list.appendChild(div);
-            });
-        }
+        const translator = {
+            async translate(text) {
+                const popup = document.getElementById('trans-popup');
+                const pOrig = document.getElementById('p-orig');
+                const pTrans = document.getElementById('p-trans');
 
-        function removeWord(index) {
-            myVocabulary.splice(index, 1);
-            localStorage.setItem('myVocabulary', JSON.stringify(myVocabulary));
-            renderVocabulary();
-        }
+                popup.classList.add('visible');
+                pOrig.textContent = text;
+                pTrans.textContent = '...';
 
-        // ИГРА
-        function startGame() {
-            if (myVocabulary.length < 4) { alert("Сохраните минимум 4 слова!"); switchTab('dictionary'); return; }
-            document.getElementById('game-start-screen').style.display = 'none';
-            document.getElementById('game-end-screen').style.display = 'none';
-            document.getElementById('game-play-screen').style.display = 'block';
-            gameQueue = [...myVocabulary].sort(() => 0.5 - Math.random()).slice(0, 10);
-            currentQuestionIndex = 0;
-            gameScore = 0;
-            showQuestion();
-        }
+                vocab.current = { orig: text.toLowerCase(), trans: '' };
+                vocab.checkSaved(vocab.current.orig);
 
-        function showQuestion() {
-            const currentItem = gameQueue[currentQuestionIndex];
-            document.getElementById('game-progress').textContent = `${currentQuestionIndex + 1} / ${gameQueue.length}`;
-            document.getElementById('quiz-word').textContent = currentItem.original;
-            let options = [currentItem];
-            let distractors = myVocabulary.filter(w => w.original !== currentItem.original).sort(() => 0.5 - Math.random()).slice(0, 3);
-            options = options.concat(distractors).sort(() => 0.5 - Math.random());
-            const optionsContainer = document.getElementById('quiz-options');
-            optionsContainer.innerHTML = '';
-            options.forEach(opt => {
-                const btn = document.createElement('button');
-                btn.className = 'option-btn';
-                btn.textContent = opt.translation;
-                btn.onclick = () => checkAnswer(opt, currentItem, btn);
-                optionsContainer.appendChild(btn);
-            });
-        }
+                try {
+                    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ru&dt=t&q=${encodeURIComponent(text)}`;
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    const trans = data[0].map(x => x[0]).join('');
 
-        function checkAnswer(selectedOption, correctOption, btnElement) {
-            const allBtns = document.querySelectorAll('.option-btn');
-            allBtns.forEach(b => b.disabled = true);
-            if (selectedOption.original === correctOption.original) { btnElement.classList.add('correct'); gameScore++; }
-            else {
-                btnElement.classList.add('wrong');
-                allBtns.forEach(b => { if (b.textContent === correctOption.translation) b.classList.add('correct'); });
-            }
-            setTimeout(() => {
-                currentQuestionIndex++;
-                if (currentQuestionIndex < gameQueue.length) showQuestion(); else endGame();
-            }, 1200);
-        }
+                    pTrans.textContent = trans;
+                    vocab.current.trans = trans;
+                } catch (e) { pTrans.textContent = "Ошибка сети"; }
+            },
 
-        function endGame() {
-            document.getElementById('game-play-screen').style.display = 'none';
-            document.getElementById('game-end-screen').style.display = 'block';
-            document.getElementById('final-score').textContent = `Ваш счет: ${gameScore} из ${gameQueue.length}`;
-        }
-
-        document.addEventListener('mousedown', (e) => {
-            if (!e.target.closest('#selection-tooltip')) { document.getElementById('selection-tooltip').style.display = 'none'; }
-            const popup = document.getElementById('translation-popup');
-            if (!popup.contains(e.target) && !e.target.classList.contains('word') && !e.target.closest('.save-btn') && !e.target.closest('#selection-tooltip')) {
-                popup.classList.remove('visible');
+            clickWord(el) {
                 document.querySelectorAll('.word.active').forEach(e => e.classList.remove('active'));
+                el.classList.add('active');
+                const text = el.textContent.replace(/[^a-zA-Z-]/g, "");
+                this.translate(text);
+            },
+
+            translateSelection() {
+                const text = window.getSelection().toString().trim();
+                if (text) {
+                    this.translate(text);
+                    document.getElementById('tooltip').style.display = 'none';
+                }
+            }
+        };
+
+        document.addEventListener('mouseup', (e) => {
+            if (e.target.closest('#trans-popup')) return;
+            const txt = window.getSelection().toString().trim();
+            const tooltip = document.getElementById('tooltip');
+
+            if (txt.length > 1) {
+                const rect = window.getSelection().getRangeAt(0).getBoundingClientRect();
+                tooltip.style.left = rect.left + 'px';
+                tooltip.style.top = (rect.top - 40) + 'px';
+                tooltip.style.display = 'block';
+            } else {
+                tooltip.style.display = 'none';
             }
         });
+        document.addEventListener('mousedown', (e) => {
+            if (!e.target.closest('#trans-popup') && !e.target.classList.contains('word')) {
+                document.getElementById('trans-popup').classList.remove('visible');
+                document.querySelectorAll('.word.active').forEach(x => x.classList.remove('active'));
+            }
+        });
+
+        /* =========================================
+           GAME LOGIC
+           ========================================= */
+        const game = {
+            start() {
+                const list = vocab.list;
+                const ui = document.getElementById('game-ui');
+
+                if (list.length < 4) {
+                    ui.innerHTML = '<h3>Мало слов!</h3><p>Сохраните минимум 4 слова в словаре.</p>';
+                    return;
+                }
+
+                const target = list[Math.floor(Math.random() * list.length)];
+                let options = [target];
+                while (options.length < 4) {
+                    const rnd = list[Math.floor(Math.random() * list.length)];
+                    if (!options.includes(rnd)) options.push(rnd);
+                }
+                options.sort(() => 0.5 - Math.random());
+
+                ui.innerHTML = `
+            <div class="game-card">
+                <h2>${target.orig}</h2>
+                <div id="opts"></div>
+            </div>
+        `;
+
+                const optsDiv = document.getElementById('opts');
+                options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    btn.textContent = opt.trans;
+                    btn.onclick = () => {
+                        if (opt === target) {
+                            btn.classList.add('correct');
+                            setTimeout(() => this.start(), 1000);
+                        } else {
+                            btn.classList.add('wrong');
+                        }
+                    };
+                    optsDiv.appendChild(btn);
+                });
+            }
+        };
+
+        // Start App
+        app.init();
+
     </script>
 </body>
 
