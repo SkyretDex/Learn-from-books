@@ -816,7 +816,8 @@
         .fs-page-indicator {
             position: fixed;
             bottom: 20px;
-            right: 20px;
+            left: 20px;
+            right: auto;
             background: rgba(0, 0, 0, 0.6);
             color: #888;
             padding: 8px 16px;
@@ -854,27 +855,30 @@
 
         .settings-toggle-btn {
             position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: linear-gradient(135deg, #333, #222);
-            color: white;
+            bottom: 30px;
+            right: 30px;
+            left: auto;
+            transform: none;
+            background: rgba(30, 30, 30, 0.9);
+            color: #ccc;
             border: 1px solid #444;
-            padding: 12px 24px;
-            border-radius: 50px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
             cursor: pointer;
             display: none;
             align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            z-index: 999;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-            transition: all 0.2s;
+            justify-content: center;
+            font-size: 20px;
+            z-index: 1001;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .settings-toggle-btn:hover {
-            background: linear-gradient(135deg, #444, #333);
-            border-color: var(--accent);
+            background: var(--accent);
+            color: white;
+            transform: rotate(90deg);
         }
 
         .fullscreen-mode .settings-toggle-btn {
@@ -882,7 +886,9 @@
         }
 
         .fullscreen-mode .settings-toggle-btn.active {
-            bottom: 85px;
+            background: var(--accent);
+            color: white;
+            transform: rotate(90deg);
         }
 
         .fullscreen-mode.settings-visible .page-content {
@@ -993,9 +999,18 @@
 
             <div id="page-content" class="page-content"></div>
 
-            <!-- Fullscreen Settings Toggle Button -->
+            <!-- Fullscreen Navigation UI -->
+            <button class="fs-nav-arrow fs-nav-prev" onclick="fullscreen.prevScreen()">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="fs-nav-arrow fs-nav-next" onclick="fullscreen.nextScreen()">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+            <div class="fs-page-indicator" id="fs-page-indicator">Стр. 1</div>
+
+            <!-- Fullscreen Settings Toggle Button (Icon only) -->
             <button class="settings-toggle-btn" id="settings-toggle" onclick="fullscreen.toggleSettings()">
-                <i class="fas fa-cog"></i> Настройки
+                <i class="fas fa-cog"></i>
             </button>
 
             <!-- Bottom Settings Panel for Fullscreen Mode -->
@@ -1281,8 +1296,59 @@
                 if (pageInfoFs && reader.pdf) {
                     pageInfoFs.textContent = `${reader.pageNum} / ${reader.totalPages}`;
                 }
+                this.updateIndicator();
+            },
+
+            // Column Navigation Logic
+            nextScreen() {
+                const container = document.getElementById('page-content');
+                const scrollAmount = container.clientWidth + 80; // width + gap
+
+                if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 10) {
+                    // Start of next book page if available
+                    reader.changePage(1);
+                } else {
+                    container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+                    this.updateIndicator();
+                }
+            },
+
+            prevScreen() {
+                const container = document.getElementById('page-content');
+                const scrollAmount = container.clientWidth + 80;
+
+                if (container.scrollLeft <= 0) {
+                    // Go to prev book page
+                    reader.changePage(-1);
+                } else {
+                    container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+                    this.updateIndicator();
+                }
+            },
+
+            updateIndicator() {
+                const container = document.getElementById('page-content');
+                if (!container) return;
+                const scrollW = container.clientWidth + 80;
+                const currentScreen = Math.round(container.scrollLeft / scrollW) + 1;
+
+                const indicator = document.getElementById('fs-page-indicator');
+                if (indicator) {
+                    indicator.textContent = `Стр. ${reader.pageNum}.${currentScreen}`;
+                }
             }
         };
+
+        // Keyboard navigation for fullscreen
+        document.addEventListener('keydown', (e) => {
+            if (!fullscreen.isActive) return;
+
+            if (e.key === 'ArrowRight' || e.key === 'Space') {
+                fullscreen.nextScreen();
+            } else if (e.key === 'ArrowLeft') {
+                fullscreen.prevScreen();
+            }
+        });
 
         /* =========================================
            APP LOGIC
@@ -1409,6 +1475,7 @@
                 const div = document.getElementById('page-content');
                 div.innerHTML = '';
                 div.scrollTop = 0;
+                div.scrollLeft = 0;
 
                 let fullText = textContent.items.map(item => item.str).join(' ');
 
