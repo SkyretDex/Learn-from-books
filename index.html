@@ -108,8 +108,15 @@
         .view-section {
             display: none;
             padding: 40px;
-            height: 100%;
+            flex-grow: 1;
+            min-height: 0;
             overflow-y: auto;
+        }
+
+        @media (max-width: 768px) {
+            .view-section {
+                padding: 15px;
+            }
         }
 
         .view-section.active {
@@ -940,6 +947,83 @@
             justify-content: center;
             padding: 0;
         }
+
+        /* RESPONSIVE STYLES */
+        .mobile-header {
+            display: none;
+            align-items: center;
+            padding: 15px 20px;
+            background: #1a1a1a;
+            border-bottom: 1px solid #333;
+            gap: 15px;
+        }
+
+        .burger-btn {
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .mobile-logo {
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Tablet & Mobile (max-width: 1024px) */
+        @media (max-width: 1024px) {
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                top: 0;
+                bottom: 0;
+                z-index: 1000;
+                transition: left 0.3s ease;
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+                width: 250px;
+            }
+
+            .sidebar.active {
+                left: 0;
+            }
+
+            .main {
+                width: 100%;
+                flex-grow: 1;
+            }
+
+            .mobile-header {
+                display: flex;
+            }
+
+            /* Adjust grid for smaller screens */
+            .grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 15px;
+            }
+
+            /* Hide regular header/logo inside sidebar if desired, or keep it */
+        }
     </style>
 </head>
 
@@ -955,6 +1039,14 @@
     </div>
 
     <div class="main">
+
+        <!-- MOBILE HEADER -->
+        <div class="mobile-header">
+            <button class="burger-btn" onclick="app.toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="mobile-logo">SmartReader</div>
+        </div>
 
         <div id="view-library" class="view-section active">
             <div class="header">
@@ -998,6 +1090,9 @@
                             title="Ночная тема"></button>
                     </div>
                 </div>
+
+                <!-- OVERLAY FOR MOBILE SIDEBAR -->
+                <div id="sidebar-overlay" class="overlay" onclick="app.toggleSidebar()"></div>
 
                 <div class="pagination-controls">
                     <button class="page-btn" id="btn-prev" onclick="reader.changePage(-1)"><i
@@ -1417,34 +1512,69 @@
                 vocab.render();
             },
 
-            nav(view) {
+            nav(pageId) {
+                // Hide all sections
                 document.querySelectorAll('.view-section').forEach(el => {
                     el.style.display = 'none';
                     el.classList.remove('active');
                 });
-                document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
 
-                const target = document.getElementById('view-' + view);
+                // Show target section
+                const target = document.getElementById('view-' + pageId);
                 if (target) {
-                    target.style.display = (view === 'reader') ? 'flex' : 'block';
+                    target.style.display = (pageId === 'reader') ? 'flex' : 'block';
                     setTimeout(() => target.classList.add('active'), 10);
                 }
 
+                // Update menu active state
+                document.querySelectorAll('.menu-item').forEach(el => {
+                    el.classList.remove('active');
+                    if (el.innerHTML.includes(this.getMenuLabel(pageId))) {
+                        el.classList.add('active');
+                    }
+                });
+
+                // Close sidebar on mobile after navigation
+                this.closeSidebar();
+
                 // Exit fullscreen if leaving reader
-                if (view !== 'reader' && typeof fullscreen !== 'undefined') {
+                if (pageId !== 'reader' && typeof fullscreen !== 'undefined') {
                     fullscreen.exit();
                 }
 
-                const menuIndex = { 'library': 0, 'dictionary': 1, 'game': 2 }[view];
-                if (menuIndex !== undefined) {
-                    const menuItems = document.querySelectorAll('.menu-item');
-                    if (menuItems[menuIndex]) {
-                        menuItems[menuIndex].classList.add('active');
-                    }
-                }
+                if (pageId === 'game' && typeof game !== 'undefined') game.start();
+                if (pageId === 'library') this.renderLibrary();
+            },
 
-                if (view === 'game') game.start();
-                if (view === 'library') this.renderLibrary();
+            toggleSidebar() {
+                const sidebar = document.querySelector('.sidebar');
+                const overlay = document.querySelector('.overlay');
+                sidebar.classList.toggle('active');
+                if (sidebar.classList.contains('active')) {
+                    overlay.style.display = 'block';
+                    setTimeout(() => overlay.style.opacity = 1, 10);
+                } else {
+                    this.closeSidebar();
+                }
+            },
+
+            closeSidebar() {
+                const sidebar = document.querySelector('.sidebar');
+                const overlay = document.querySelector('.overlay');
+                if (sidebar.classList.contains('active')) {
+                    sidebar.classList.remove('active');
+                    overlay.style.opacity = 0;
+                    setTimeout(() => overlay.style.display = 'none', 300);
+                }
+            },
+
+            getMenuLabel(id) {
+                const map = {
+                    'library': 'Библиотека',
+                    'dictionary': 'Словарь',
+                    'game': 'Тренировка'
+                };
+                return map[id] || '';
             },
 
             async uploadBook(input) {
