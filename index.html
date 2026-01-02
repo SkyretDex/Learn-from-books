@@ -398,6 +398,21 @@
             display: flex;
             justify-content: space-between;
             border-left: 4px solid var(--accent);
+            align-items: center;
+        }
+
+        .vocab-delete-btn {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 5px 10px;
+            font-size: 16px;
+            transition: color 0.2s;
+        }
+
+        .vocab-delete-btn:hover {
+            color: var(--red);
         }
 
         #trans-popup {
@@ -1771,12 +1786,36 @@
             render() {
                 const div = document.getElementById('vocab-list');
                 div.innerHTML = '';
+                if (this.list.length === 0) {
+                    div.innerHTML = '<p style="color:#666">Нет сохраненных слов.</p>';
+                    return;
+                }
                 [...this.list].reverse().forEach(w => {
                     const el = document.createElement('div');
                     el.className = 'vocab-item';
-                    el.innerHTML = `<div><b>${w.orig}</b><br><small>${w.trans}</small></div>`;
+                    el.innerHTML = `
+                        <div style="flex-grow:1"><b>${w.orig}</b><br><small>${w.trans}</small></div>
+                        <button class="vocab-delete-btn" onclick="vocab.delete('${w.orig.replace(/'/g, "\\'")}')" title="Удалить">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    `;
                     div.appendChild(el);
                 });
+            },
+
+            delete(wordOrig) {
+                if (confirm(`Удалить слово "${wordOrig}" из словаря?`)) {
+                    const idx = this.list.findIndex(w => w.orig === wordOrig);
+                    if (idx >= 0) {
+                        this.list.splice(idx, 1);
+                        this.save();
+                        this.render();
+                        // Update star status if current
+                        if (this.current && this.current.orig === wordOrig) {
+                            document.getElementById('btn-star').classList.remove('saved');
+                        }
+                    }
+                }
             }
         };
 
