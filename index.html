@@ -1068,7 +1068,7 @@
                 <h2>Моя библиотека</h2>
                 <label class="btn-upload">
                     <i class="fas fa-plus"></i> Добавить книгу
-                    <input type="file" onchange="app.uploadBook(this)" accept="application/pdf">
+                    <input type="file" onchange="app.uploadBook(this)" accept=".pdf, .txt, .fb2">
                 </label>
             </div>
             <div id="library-grid" class="grid"></div>
@@ -1228,10 +1228,10 @@
                     };
                 });
             },
-            addBook(title, blob) {
+            addBook(title, blob, format = 'pdf') {
                 return new Promise((resolve) => {
                     const tx = this.db.transaction("books", "readwrite");
-                    tx.objectStore("books").add({ title, blob, currentPage: 1, date: Date.now() });
+                    tx.objectStore("books").add({ title, blob, format, currentPage: 1, date: Date.now() });
                     tx.oncomplete = () => resolve();
                 });
             },
@@ -1595,14 +1595,29 @@
             async uploadBook(input) {
                 const file = input.files[0];
                 if (!file) return;
+
+                const ext = file.name.split('.').pop().toLowerCase();
+                let format = 'pdf';
+                let type = 'application/pdf';
+
+                if (ext === 'txt') { format = 'txt'; type = 'text/plain'; }
+                if (ext === 'fb2') { format = 'fb2'; type = 'text/xml'; }
+
                 const reader = new FileReader();
                 reader.onload = async (e) => {
-                    const blob = new Blob([e.target.result], { type: 'application/pdf' });
-                    await DB.addBook(file.name.replace('.pdf', ''), blob);
+                    const blob = new Blob([e.target.result], { type: type });
+                    // Remove extension from title
+                    const title = file.name.replace(/\.(pdf|txt|fb2)$/i, '');
+                    await DB.addBook(title, blob, format);
                     this.renderLibrary();
                     alert("Книга добавлена!");
                 };
-                reader.readAsArrayBuffer(file);
+
+                if (format === 'pdf') {
+                    reader.readAsArrayBuffer(file);
+                } else {
+                    reader.readAsText(file);
+                }
             },
 
             async renderLibrary() {
@@ -1663,33 +1678,110 @@
 
                 this.currentBookId = id;
                 this.pageNum = book.currentPage || 1;
-
-                const url = URL.createObjectURL(book.blob);
-                const loadingTask = pdfjsLib.getDocument(url);
-
-                this.pdf = await loadingTask.promise;
-                this.totalPages = this.pdf.numPages;
+                this.currentFormat = book.format || 'pdf'; // Backward compatibility
 
                 app.nav('reader');
                 if (typeof fullscreen !== 'undefined') fullscreen.enter();
+
+                if (this.currentFormat === 'pdf') {
+                    const url = URL.createObjectURL(book.blob);
+                    const loadingTask = pdfjsLib.getDocument(url);
+                    this.pdf = await loadingTask.promise;
+                    this.totalPages = this.pdf.numPages;
+                    this.renderPage(this.pageNum);
+                } else if (this.currentFormat === 'txt') {
+                    const text = await book.blob.text();
+                    this.processTXT(text);
+                } else if (this.currentFormat === 'fb2') {
+                    const text = await book.blob.text();
+                    this.processFB2(text);
+                }
+            },
+
+            // Process TXT: Split into chunks/pages
+            processTXT(text) {
+                // Split by double newlines to get paragraphs
+                const paras = text.split(/\r?\n\s*\r?\n/).filter(p => p.trim());
+                // Group paragraphs into pages (e.g., 20 paragraphs per page)
+                const pageSize = 20;
+                this.pages = [];
+                for (let i = 0; i < paras.length; i += pageSize) {
+                    this.pages.push(paras.slice(i, i + pageSize));
+                }
+                this.totalPages = this.pages.length;
+                if (this.pageNum > this.totalPages) this.pageNum = 1;
                 this.renderPage(this.pageNum);
             },
 
-            async renderPage(num, scrollToEnd = false) {
-                const page = await this.pdf.getPage(num);
-                const textContent = await page.getTextContent();
+            // Process FB2: Parse XML
+            processFB2(text) {
+                const parser = new DOMParser();
+                const xml = parser.parseFromString(text, "text/xml");
+                const bodies = xml.getElementsByTagName('body');
+                let contentBody = bodies[0]; // Usually the first body is the main text
+                if (bodies.length > 1 && bodies[0].getAttribute('name') === 'notes') {
+                    contentBody = bodies[1];
+                }
 
+                // Helper to extract text from section
+                const extractSection = (node) => {
+                    let res = [];
+                    for (let child of node.childNodes) {
+                        if (child.nodeName === 'p') res.push(child.textContent);
+                        if (child.nodeName === 'section') res = res.concat(extractSection(child));
+                        if (child.nodeName === 'title') {
+                            // Extract title text from its <p> children
+                            let t = "";
+                            for (let tChild of child.childNodes) {
+                                if (tChild.nodeName === 'p') t += tChild.textContent + " ";
+                            }
+                            // Add a special marker for titles
+                            res.push(`###${t.trim()}`);
+                        }
+                    }
+                    return res;
+                };
+
+                const paras = extractSection(contentBody);
+
+                // Group into pages
+                const pageSize = 20;
+                this.pages = [];
+                for (let i = 0; i < paras.length; i += pageSize) {
+                    this.pages.push(paras.slice(i, i + pageSize));
+                }
+                this.totalPages = this.pages.length;
+                if (this.pageNum > this.totalPages) this.pageNum = 1;
+                this.renderPage(this.pageNum);
+            },
+
+            async renderPage(num) {
                 const div = document.getElementById('page-content');
                 div.innerHTML = '';
                 div.scrollTop = 0;
                 div.scrollLeft = 0;
 
+                if (this.currentFormat === 'pdf') {
+                    this.renderPDFPage(num, div);
+                } else {
+                    this.renderTextPage(num, div);
+                }
+
+                document.getElementById('page-info').textContent = `${num} / ${this.totalPages}`;
+                document.getElementById('btn-prev').disabled = num <= 1;
+                document.getElementById('btn-next').disabled = num >= this.totalPages;
+
+                fullscreen.updatePageInfo();
+                DB.updateProgress(this.currentBookId, num);
+            },
+
+            async renderPDFPage(num, div) {
+                const page = await this.pdf.getPage(num);
+                const textContent = await page.getTextContent();
                 let fullText = textContent.items.map(item => item.str).join(' ');
 
-                // Регулярное выражение для определения заголовков глав
+                // Existing PDF rendering logic...
                 const chapterPattern = /^(Chapter\s+\d+|Глава\s+\d+|CHAPTER\s+\d+|ГЛАВА\s+\d+|Part\s+\d+|Часть\s+\d+|PART\s+\d+|ЧАСТЬ\s+\d+|\d+\.\s+[A-ZА-Я])/i;
-
-                // Разбиваем текст на параграфы
                 const paras = fullText.split(/\n\s*\n/).filter(p => p.trim());
 
                 if (paras.length < 2) {
@@ -1697,15 +1789,12 @@
                 } else {
                     paras.forEach((pText, index) => {
                         const trimmedText = pText.trim();
-
-                        // Проверяем, является ли это заголовком главы
                         const isChapter = chapterPattern.test(trimmedText) ||
                             (trimmedText.length < 100 && trimmedText === trimmedText.toUpperCase() && trimmedText.length > 5);
 
                         if (isChapter) {
                             const chapterDiv = document.createElement('div');
                             chapterDiv.className = index > 0 ? 'chapter-break' : '';
-
                             const title = document.createElement('h2');
                             title.className = 'chapter-title';
                             title.textContent = trimmedText;
@@ -1720,15 +1809,26 @@
                         }
                     });
                 }
+            },
 
-                document.getElementById('page-info').textContent = `${num} / ${this.totalPages}`;
-                document.getElementById('btn-prev').disabled = num <= 1;
-                document.getElementById('btn-next').disabled = num >= this.totalPages;
+            renderTextPage(num, div) {
+                const pageContent = this.pages[num - 1]; // Array of strings/paragraphs
 
-                // Update fullscreen page info
-                fullscreen.updatePageInfo();
-
-                DB.updateProgress(this.currentBookId, num);
+                pageContent.forEach(text => {
+                    if (text.startsWith('###')) {
+                        // Title
+                        const title = document.createElement('h2');
+                        title.className = 'chapter-title';
+                        title.textContent = text.replace('###', '');
+                        div.appendChild(title);
+                    } else {
+                        const p = document.createElement('p');
+                        p.style.marginBottom = '1em';
+                        p.style.textIndent = '1.5em';
+                        this.htmlifyWords(text, p);
+                        div.appendChild(p);
+                    }
+                });
             },
 
             htmlifyWords(text, container) {
