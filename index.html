@@ -1724,28 +1724,48 @@
             async repaginate() {
                 if (this.currentFormat === 'pdf' || !this.allParagraphs || this.allParagraphs.length === 0) return;
 
+                const viewElement = document.getElementById('view-reader');
+                const pageContent = document.getElementById('page-content');
+
+                // Safety check for visibility/width
+                if (!viewElement || viewElement.offsetParent === null || pageContent.clientWidth === 0) {
+                    setTimeout(() => this.repaginate(), 50);
+                    return;
+                }
+
                 // 1. Setup measurement container
                 const container = document.createElement('div');
                 container.style.visibility = 'hidden';
                 container.style.position = 'absolute';
-                container.style.top = '-9999px';
-                container.style.width = document.getElementById('page-content').clientWidth + 'px';
-                // Copy styles relevant to size
-                container.style.fontSize = getComputedStyle(document.documentElement).getPropertyValue('--reader-size');
-                container.style.fontFamily = getComputedStyle(document.documentElement).getPropertyValue('--reader-font');
-                container.style.lineHeight = getComputedStyle(document.documentElement).getPropertyValue('--reader-line-height');
-                // Allow it to grow freely
+                container.style.top = '0';
+                container.style.zIndex = '-1000';
+                container.className = 'page-content';
+
+                // Match width exactly to content area
+                const pcStyle = getComputedStyle(pageContent);
+                container.style.width = pcStyle.width;
+                container.style.padding = pcStyle.padding;
+                container.style.boxSizing = pcStyle.boxSizing;
+                container.style.maxWidth = pcStyle.maxWidth;
+
+                // Copy font styles
+                const rootStyle = getComputedStyle(document.documentElement);
+                container.style.fontSize = rootStyle.getPropertyValue('--reader-size');
+                container.style.fontFamily = rootStyle.getPropertyValue('--reader-font');
+                container.style.lineHeight = rootStyle.getPropertyValue('--reader-line-height');
                 container.style.height = 'auto';
-                container.className = 'page-content'; // Pick up other CSS
-                document.body.appendChild(container);
+
+                // key: append to view-reader to stay in flow/context
+                viewElement.appendChild(container);
 
                 // Calculate max height per page
-                // We want it to fit in the viewing area. 
-                // Fullscreen: window height - padding. Normal: view-section height - padding.
-                const viewHeight = document.getElementById('view-reader').clientHeight;
+                const padTop = parseFloat(pcStyle.paddingTop);
+                const padBottom = parseFloat(pcStyle.paddingBottom);
                 const headerHeight = document.querySelector('.reader-header').clientHeight || 60;
-                // Target height: slightly less than available space to avoid stressful strictness
-                const maxH = (viewHeight - headerHeight - 40);
+                const viewHeight = viewElement.clientHeight;
+
+                // Available height for TEXT
+                const maxH = viewHeight - headerHeight - padTop - padBottom - 20;
 
                 this.pages = [];
                 let currentPage = [];
@@ -1754,19 +1774,17 @@
                 // 2. Iterate and fill
                 for (let para of this.allParagraphs) {
                     const el = document.createElement(para.startsWith('###') ? 'h2' : 'p');
-                    el.style.marginBottom = '1em'; // Ensure margin is accounted
+                    el.style.marginBottom = '1em';
+                    el.style.textIndent = '1.5em';
                     el.textContent = para.replace('###', '');
+
                     container.appendChild(el);
 
                     if (container.scrollHeight > maxH && currentPage.length > 0) {
-                        // Page full. Remove last added element from container for next page
                         container.removeChild(el);
                         this.pages.push(currentPage);
-
-                        // Start new page
                         currentPage = [para];
                         container.innerHTML = '';
-                        // Re-add to measure for next page
                         container.appendChild(el);
                     } else {
                         currentPage.push(para);
@@ -1776,12 +1794,10 @@
                 if (currentPage.length > 0) this.pages.push(currentPage);
 
                 // Clean up
-                document.body.removeChild(container);
+                viewElement.removeChild(container);
 
                 // Update state
                 this.totalPages = this.pages.length;
-
-                // Basic bounds check (try to keep relative progress could be better but sticking to strict pageNum for now)
                 if (this.pageNum > this.totalPages) this.pageNum = this.totalPages;
                 if (this.pageNum < 1) this.pageNum = 1;
 
