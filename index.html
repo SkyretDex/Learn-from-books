@@ -1441,7 +1441,7 @@
 
             updatePageInfo() {
                 const pageInfoFs = document.getElementById('page-info-fs');
-                if (pageInfoFs && reader.pdf) {
+                if (pageInfoFs) {
                     pageInfoFs.textContent = `${reader.pageNum} / ${reader.totalPages}`;
                 }
                 this.updateIndicator();
@@ -1983,7 +1983,11 @@
                 const paras = fullText.split(/\n\s*\n/).filter(p => p.trim());
 
                 if (paras.length < 2) {
-                    this.htmlifyWords(fullText, div);
+                    const p = document.createElement('p');
+                    p.style.marginBottom = '1em';
+                    p.style.textIndent = '1.5em';
+                    this.htmlifyWords(fullText, p);
+                    div.appendChild(p);
                 } else {
                     paras.forEach((pText, index) => {
                         const trimmedText = pText.trim();
